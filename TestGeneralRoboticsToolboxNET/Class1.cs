@@ -88,7 +88,7 @@ namespace TestGeneralRoboticsToolboxNET
             Matrix<double> hat = Hat(r);
             for (int i = 0; i < 3; i++)
             {
-                for (int j = 3; i < 6; i++)
+                for (int j = 3; j < 6; j++)
                 {
                     I[i, j] = hat[i, j - 3];
                 }
@@ -97,7 +97,7 @@ namespace TestGeneralRoboticsToolboxNET
         }
         public static Matrix<double> Q2R(Vector<double> q)
         {
-            Matrix<double> I = Matrix<double>.Build.DenseIdentity(6);
+            Matrix<double> I = Matrix<double>.Build.DenseIdentity(3);
 
             Matrix<double> hat = Hat(q.SubVector(1, 3));
             Matrix<double> qhat2 = hat.Multiply(hat);
@@ -233,7 +233,8 @@ namespace TestGeneralRoboticsToolboxNET
             Vector<double> output;
             double r = Math.Atan2(R[2, 1], R[2, 2]);
             double y = Math.Atan2(R[1, 0], R[0, 0]);
-            double normie = (R.SubMatrix(2, 1, 1, 3)).L2Norm();
+            Console.WriteLine(R);
+            double normie = (R.SubMatrix(2, 1, 1, 2)).L2Norm();
             double p = Math.Atan2(R[2, 0], normie);
             return output = Vector<double>.Build.DenseOfArray(new[] { r, p, y });
         }
@@ -265,8 +266,8 @@ namespace TestGeneralRoboticsToolboxNET
             //Reshape here not added
             if (robot.R_tool != null && robot.P_tool != null)
             {
-                p = p + R * robot.P_tool;
-                R = R * robot.R_tool;
+                p = p + R*robot.P_tool;
+                R = R*robot.R_tool;
             }
             Transform output = new Transform(R, p);
             return output;
