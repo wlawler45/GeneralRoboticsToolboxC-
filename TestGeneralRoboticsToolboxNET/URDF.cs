@@ -13,7 +13,7 @@ namespace TestGeneralRoboticsToolboxNET
 {
 
     
-    struct Joint
+    public struct Joint
     {
         public string Name;
         public Int32 Joint_type;
@@ -39,7 +39,7 @@ namespace TestGeneralRoboticsToolboxNET
             Velocity_limit=velocity_limit;
         }*/
     }
-    struct Link
+    public struct Link
     {
         public string Name;
         public Transform Origin;
@@ -66,6 +66,46 @@ namespace TestGeneralRoboticsToolboxNET
                 throw new ArgumentException(String.Format("File name not found"));
             }
             return doc;
+        }
+        public List<string> find_possible_tip_link_names(Dictionary<string,Joint> joints)
+        {
+            HashSet<string> tip_link_candidate = new HashSet<string>();
+            HashSet<string> tip_link_remove = new HashSet<string>();
+            List<string> returns= new List<string>();
+            foreach (KeyValuePair<string, Joint> i in joints)
+            {
+                tip_link_candidate.Add(i.Value.Parent);
+            }
+            foreach (KeyValuePair<string, Joint> i in joints)
+            {
+                tip_link_candidate.Remove(i.Value.Child);
+            }
+            foreach (string j in tip_link_candidate)
+            {
+                returns.Add(j);
+            }
+            return returns;
+
+        }
+        public List<string> find_possible_root_link_names(Dictionary<string,Joint> joints)
+        {
+            HashSet<string> root_link_candidate = new HashSet<string>();
+            HashSet<string> root_link_remove = new HashSet<string>();
+            List<string> returns = new List<string>();
+            foreach (KeyValuePair<string, Joint> i in joints)
+            {
+                root_link_candidate.Add(i.Value.Parent);
+            }
+            foreach (KeyValuePair<string, Joint> i in joints)
+            {
+                root_link_candidate.Remove(i.Value.Child);
+            }
+            foreach (string j in root_link_candidate)
+            {
+                returns.Add(j);
+            }
+            return returns;
+
         }
         public void Xmldocument_to_robot(XmlDocument doc,string root_link=default(string),string tip_link=default(string))
         {
@@ -237,131 +277,156 @@ namespace TestGeneralRoboticsToolboxNET
                     }
                     joints.Add(current_joint_name, current_joint);
                 }
-                /*
-                 foreach (KeyValuePair<string, Link> linker in links)
-                 {
-                     Console.WriteLine(linker.Key);
-                     foreach (var prop in linker.Value.GetType().GetProperties())
-                     {
-                         Console.WriteLine(prop.Name + ": " + prop.GetValue(linker.Value, null));
-                     }
-                     foreach (var field in linker.Value.GetType().GetFields())
-                     {
-                         Console.WriteLine(field.Name + ": " + field.GetValue(linker.Value));
-                     }
+                
 
-                 }
-
-                 foreach (KeyValuePair<string, Joint> linker in joints)
-                 {
-                     Console.WriteLine(linker.Key);
-                     foreach (var prop in linker.Value.GetType().GetProperties())
-                     {
-                         Console.WriteLine(prop.Name + ": " + prop.GetValue(linker.Value, null));
-                     }
-                     foreach (var field in linker.Value.GetType().GetFields())
-                     {
-                         Console.WriteLine(field.Name + ": " + field.GetValue(linker.Value));
-                     }
-
-                 }*/
                 string current_linked = root_link;
-
-                string saved_link = "";
+                bool root_not_specified = root_link == default(string);
+                
                 List<string> fails = new List<string>();
                 Joint last_fail=new Joint();
                 List<Joint> robot_joints = new List<Joint>();
-                while (current_linked != tip_link)
+                if (tip_link != default(string))
                 {
-                    foreach (KeyValuePair<string, Joint> linker in joints)
+                    Console.WriteLine("Tip link found");
+                    while (current_linked != tip_link)
                     {
-                        if (linker.Value.Parent == current_linked && !fails.Contains(linker.Value.Name))
+                        foreach (KeyValuePair<string, Joint> linker in joints)
                         {
-                            current_linked = linker.Value.Child;
-                            saved_link = current_linked;
-                            Console.WriteLine("name={0}", linker.Value.Name);
-                            Console.WriteLine("searching for={0}", current_linked);
-                            robot_joints.Add(linker.Value);
-                            if (current_linked == tip_link)
+                            if ((linker.Value.Parent == current_linked || root_not_specified) && !fails.Contains(linker.Value.Name))
                             {
-                                Console.WriteLine("finishing");
-                                break;
-                            }
-
-
-                            last_fail = linker.Value;
-                            
-                            /*
-                            foreach (KeyValuePair<string, Joint> linker2 in joints)
-                            {
-                                if (linker2.Value.Parent == current_linked)
+                                root_not_specified = false;
+                                current_linked = linker.Value.Child;
+                                
+                                Console.WriteLine("name={0}", linker.Value.Name);
+                                Console.WriteLine("searching for={0}", current_linked);
+                                robot_joints.Add(linker.Value);
+                                if (current_linked == tip_link)
                                 {
+                                    Console.WriteLine("finishing");
+                                    break;
+                                }
 
-                                    current_linked = linker2.Value.Child;
-                                    Console.WriteLine("name2={0}", linker2.Value.Name);
-                                    Console.WriteLine("searched2={0}", current_linked);
-                                    /*
-                                    foreach (Joint joit in robot_joints_subset)
+
+                                last_fail = linker.Value;
+
+
+
+                                foreach (Joint joit in robot_joints)
+                                {
+                                    Console.WriteLine("current robot joints: {0}", joit.Name);
+                                }
+
+
+
+
+                            }
+                        }
+                        root_not_specified = root_link == default(string);
+
+
+                        Console.WriteLine("adding to fails {0}", last_fail.Name);
+                        fails.Add(last_fail.Name);
+                        foreach (string j in fails)
+                        {
+                            Console.WriteLine("fails includes: {0}", j);
+                        }
+
+                        if (current_linked == tip_link)
+                        {
+                            Console.WriteLine("ending while");
+                            break;
+                        }
+                        Console.WriteLine("escaped outer loop");
+
+                        robot_joints.Clear();
+                        current_linked = root_link;
+                    }
+                }
+                else
+                {
+                    List<string> possible_tips = find_possible_tip_link_names(joints);
+                    foreach (string j in possible_tips)
+                    {
+                        Console.WriteLine("Possible tips: {0}", j);
+                    }
+                    if (root_not_specified)
+                    {
+                       List<string> possible_roots = find_possible_root_link_names(joints);
+                        foreach (string j in possible_roots)
+                        {
+                            Console.WriteLine("Possible roots: {0}", j);
+                        }
+
+                        foreach (string i in possible_roots)
+                        {
+                            current_linked = i;
+                            bool any_answers = false;
+                            while (!possible_tips.Contains(current_linked))
+                            {
+                                any_answers = false;
+                                foreach (KeyValuePair<string, Joint> linker in joints)
+                                {
+                                    if ((linker.Value.Parent == current_linked) && !fails.Contains(linker.Value.Name))
                                     {
-                                        Console.WriteLine(joit.Name);
-                                    }
-
-                                    robot_joints_subset.Add(linker2.Value);
-
-                                    if (current_linked == tip_link)
-                                    {
-                                        robot_joints.AddRange(robot_joints_subset);
-                                        foreach (Joint joit in robot_joints_subset)
+                                        any_answers = true;
+                                        if (linker.Value.Joint_type == 4)
                                         {
-                                            Console.WriteLine("ending");
+                                            
+                                        }
+                                        current_linked = linker.Value.Child;
+
+                                        Console.WriteLine("name={0}", linker.Value.Name);
+                                        Console.WriteLine("searching for={0}", current_linked);
+                                        robot_joints.Add(linker.Value);
+                                        if (possible_tips.Contains(current_linked))
+                                        {
+                                            Console.WriteLine("finishing");
+                                            break;
                                         }
 
-                                        break;
+
+                                        last_fail = linker.Value;
+
+
+
+                                        foreach (Joint joit in robot_joints)
+                                        {
+                                            Console.WriteLine("current robot joints: {0}", joit.Name);
+                                        }
+
+
+
+
                                     }
                                 }
-                            }
-                            
-                            foreach (Joint joit in robot_joints_subset)
-                            {
-                                Console.WriteLine("adding to fails {0}", joit.Name);
-                                fails.Add(joit.Name);
-                            }
-                            Console.WriteLine("escaped inner loop");
-                            Console.WriteLine(saved_link);
-                            robot_joints_subset.Clear();
-                            current_linked = saved_link;
-                            */
+                                
+                                
 
-                            
-                            foreach (Joint joit in robot_joints)
-                            {
-                                Console.WriteLine("current robot joints: {0}", joit.Name);
+                                Console.WriteLine("adding to fails {0}", last_fail.Name);
+                                fails.Add(last_fail.Name);
+                                foreach (string j in fails)
+                                {
+                                    Console.WriteLine("fails includes: {0}", j);
+                                }
+
+                                if (possible_tips.Contains(current_linked))
+                                {
+                                    Console.WriteLine("ending while");
+                                    break;
+                                }
+                                Console.WriteLine("escaped outer loop");
+                                if (!any_answers)
+                                {
+                                    break;
+                                }
+                                robot_joints.Clear();
+                                current_linked = i;
                             }
-                           
-
-                            
-
                         }
                     }
-                
-                    
-                    Console.WriteLine("adding to fails {0}", last_fail.Name);
-                    fails.Add(last_fail.Name);
-                    foreach(string j in fails)
-                    {
-                        Console.WriteLine("fails includes: {0}",j);
-                    }
 
-                    if (current_linked == tip_link)
-                    {
-                        Console.WriteLine("ending while");
-                        break;
-                    }
-                    Console.WriteLine("escaped outer loop");
-                    
-                    robot_joints.Clear();
-                    current_linked = root_link;
                 }
+
                 foreach (Joint joit in robot_joints)
                 {
                     Console.WriteLine("final robot joints: {0}", joit.Name);
