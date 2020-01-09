@@ -74,11 +74,11 @@ namespace TestGeneralRoboticsToolboxNET
             List<string> returns= new List<string>();
             foreach (KeyValuePair<string, Joint> i in joints)
             {
-                tip_link_candidate.Add(i.Value.Parent);
+                tip_link_candidate.Add(i.Value.Child);
             }
             foreach (KeyValuePair<string, Joint> i in joints)
             {
-                tip_link_candidate.Remove(i.Value.Child);
+                tip_link_candidate.Remove(i.Value.Parent);
             }
             foreach (string j in tip_link_candidate)
             {
@@ -107,7 +107,7 @@ namespace TestGeneralRoboticsToolboxNET
             return returns;
 
         }
-        public void Xmldocument_to_robot(XmlDocument doc,string root_link=default(string),string tip_link=default(string))
+        public Robot Xmldocument_to_robot(XmlDocument doc,string root_link=default(string),string tip_link=default(string))
         {
             Dictionary<string, Joint> joints = new Dictionary<string, Joint>();
             Dictionary<string, Link> links = new Dictionary<string, Link>();
@@ -285,6 +285,7 @@ namespace TestGeneralRoboticsToolboxNET
                 List<string> fails = new List<string>();
                 Joint last_fail=new Joint();
                 List<Joint> robot_joints = new List<Joint>();
+                List<Joint> robot_joints_temp = new List<Joint>();
                 if (tip_link != default(string))
                 {
                     Console.WriteLine("Tip link found");
@@ -344,13 +345,13 @@ namespace TestGeneralRoboticsToolboxNET
                 }
                 else
                 {
+                    
                     List<string> possible_tips = find_possible_tip_link_names(joints);
                     foreach (string j in possible_tips)
                     {
                         Console.WriteLine("Possible tips: {0}", j);
                     }
-                    if (root_not_specified)
-                    {
+                    
                        List<string> possible_roots = find_possible_root_link_names(joints);
                         foreach (string j in possible_roots)
                         {
@@ -361,6 +362,7 @@ namespace TestGeneralRoboticsToolboxNET
                         {
                             current_linked = i;
                             bool any_answers = false;
+                            string repeat = default(string);
                             while (!possible_tips.Contains(current_linked))
                             {
                                 any_answers = false;
@@ -371,16 +373,19 @@ namespace TestGeneralRoboticsToolboxNET
                                         any_answers = true;
                                         if (linker.Value.Joint_type == 4)
                                         {
-                                            
+                                            //Console.WriteLine("fixed joint in chain found: {0}", linker.Value.Name);
+                                            last_fail = linker.Value;
+                                            // fails.Add(last_fail.Name);
+
                                         }
                                         current_linked = linker.Value.Child;
 
-                                        Console.WriteLine("name={0}", linker.Value.Name);
-                                        Console.WriteLine("searching for={0}", current_linked);
+                                        //Console.WriteLine("name={0}", linker.Value.Name);
+                                        //Console.WriteLine("searching for={0}", current_linked);
                                         robot_joints.Add(linker.Value);
                                         if (possible_tips.Contains(current_linked))
                                         {
-                                            Console.WriteLine("finishing");
+                                            //Console.WriteLine("finishing");
                                             break;
                                         }
 
@@ -389,49 +394,139 @@ namespace TestGeneralRoboticsToolboxNET
 
 
 
-                                        foreach (Joint joit in robot_joints)
-                                        {
-                                            Console.WriteLine("current robot joints: {0}", joit.Name);
-                                        }
+                                        
 
 
 
 
                                     }
                                 }
-                                
-                                
 
-                                Console.WriteLine("adding to fails {0}", last_fail.Name);
-                                fails.Add(last_fail.Name);
-                                foreach (string j in fails)
+                                if (!any_answers)
                                 {
-                                    Console.WriteLine("fails includes: {0}", j);
+                                    //Console.WriteLine("no answers found for this loop");
+                                    if (last_fail.Name == repeat)
+                                    {
+                                        goto Exit;
+                                        
+                                    }
+                                    repeat = last_fail.Name;
+
                                 }
+
+                                //Console.WriteLine("adding to fails {0}", last_fail.Name);
+                                fails.Add(last_fail.Name);
+                                //foreach (string j in fails)
+                                //{
+                                    //Console.WriteLine("fails includes: {0}", j);
+//                                }
 
                                 if (possible_tips.Contains(current_linked))
                                 {
-                                    Console.WriteLine("ending while");
-                                    break;
+                                    
+                                    List<int> indices = new List<int>();
+                                    
+                                    for(int q=0;q<robot_joints.Count;q++)
+                                    {
+                                        if (robot_joints[q].Joint_type == 4)
+                                        {
+                                            indices.Add(q);
+                                        }
+                                    }
+                                    if (indices.Count == 0)
+                                    {
+                                        if (robot_joints_temp.Count < robot_joints.Count)
+                                        {
+                                            
+                                            robot_joints_temp = robot_joints;
+                                        }
+                                    }
+                                    
+                                    if (indices.Count ==1 && robot_joints.Count>2)
+                                    {
+                                        if(indices[0]==0 || indices[0] == robot_joints.Count - 1)
+                                        {
+                                            robot_joints.RemoveAt(indices[0]);
+                                            
+                                            if (robot_joints_temp.Count < robot_joints.Count)
+                                            {
+                                                
+                                                robot_joints_temp = robot_joints;
+                                            }
+                                        }
+                                    }
+                                    if (indices.Count==2 && robot_joints.Count>4)
+                                    {
+                                        if(indices[0]==0 && indices[1] == (robot_joints.Count - 1))
+                                        {
+                                            robot_joints.RemoveAt(indices[0]);
+                                            
+
+
+                                            robot_joints.RemoveAt(indices[1]-1);
+                                            
+                                            foreach (Joint joit in robot_joints_temp)
+                                            {
+                                                
+                                            }
+                                            if (robot_joints_temp.Count < robot_joints.Count)
+                                            {
+                                                
+                                                robot_joints_temp =new List<Joint> (robot_joints);
+                                            }
+                                        }
+                                        
+                                        
+                                    }
                                 }
-                                Console.WriteLine("escaped outer loop");
-                                if (!any_answers)
-                                {
-                                    break;
-                                }
+                                
                                 robot_joints.Clear();
+                                
                                 current_linked = i;
                             }
                         }
-                    }
-
+                    
+                Exit:
+                    robot_joints = robot_joints_temp;
+                    
+                    
                 }
 
                 foreach (Joint joit in robot_joints)
                 {
                     Console.WriteLine("final robot joints: {0}", joit.Name);
                 }
-
+                Matrix<double> h = Matrix<double>.Build.Dense(3, robot_joints.Count);
+                Matrix<double> p = Matrix<double>.Build.Dense(3, robot_joints.Count+1);
+                Int32[] joint_types = new int[robot_joints.Count];
+                double[] joint_lower_limits = new double[robot_joints.Count];
+                double[] joint_upper_limits = new double[robot_joints.Count];
+                double[] joint_vel_limits = new double[robot_joints.Count];
+                double[] joint_acc_limits = new double[robot_joints.Count];
+                string[] joint_names = new string[robot_joints.Count];
+                
+                for(int o = 0; o < robot_joints.Count; o++)
+                {
+                    h.SetColumn(o, robot_joints[o].Axis);
+                    p.SetColumn(o, robot_joints[o].Origin.P);
+                    joint_types[o] = robot_joints[o].Joint_type;
+                    joint_lower_limits[o] = robot_joints[o].Lower_limit;
+                    joint_upper_limits[o] = robot_joints[o].Upper_limit;
+                    joint_vel_limits[o] = robot_joints[o].Velocity_limit;
+                    joint_acc_limits[o] = robot_joints[o].Effort_limit;
+                    joint_names[o] = robot_joints[o].Name;
+                }
+                
+                string root_link_name;
+                if (root_not_specified) root_link_name = robot_joints[0].Parent; else root_link_name = root_link;
+                
+                string tip_link_name;
+                if (tip_link != default(string)) tip_link_name = robot_joints[-1].Child; else tip_link_name = tip_link;
+                Robot robot = new Robot(h,p,joint_types,joint_lower_limits,joint_upper_limits,joint_vel_limits,joint_acc_limits);
+                robot.Joint_names = joint_names;
+                robot.Root_link_name = root_link_name;
+                robot.Tip_link_name = tip_link_name;
+                return robot;
             }
 
 

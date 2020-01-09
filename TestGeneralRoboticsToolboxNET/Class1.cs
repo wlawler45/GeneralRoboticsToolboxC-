@@ -234,7 +234,8 @@ namespace TestGeneralRoboticsToolboxNET
             Vector<double> output;
             double r = Math.Atan2(R[2, 1], R[2, 2]);
             double y = Math.Atan2(R[1, 0], R[0, 0]);
-            double normie = (R.SubMatrix(2, 1, 1, 3)).L2Norm();
+            Console.WriteLine(R);
+            double normie = (R.SubMatrix(2, 1, 1, 2)).L2Norm();
             double p = Math.Atan2(R[2, 0], normie);
             return output = Vector<double>.Build.DenseOfArray(new[] { r, p, y });
         }
@@ -246,7 +247,7 @@ namespace TestGeneralRoboticsToolboxNET
             {
                 for(int i = 0; i < theta.Length; i++)
                 {
-                    if(!(robot.Joint_lower_limit[i]<theta[i] && theta[i]<robot.Joint_upper_limit[i])) throw new ArgumentException(String.Format("Joint angles out of range"));
+                    if(!(robot.Joint_lower_limit[i]<theta[i] && theta[i]<robot.Joint_upper_limit[i])) throw new ArgumentException(String.Format("Joint angle for joint {0} out of range",i));
                 }
             }
             Vector<double> p;
@@ -263,13 +264,20 @@ namespace TestGeneralRoboticsToolboxNET
                 }
                 p = p + R * robot.P.Column(i + 1);
             }
+            
             //Reshape here not added
             if (robot.R_tool != null && robot.P_tool != null)
             {
+                
                 p = p + R.Multiply(robot.P_tool);
-                R = R.Multiply(robot.R_tool);
+                R = R*robot.R_tool;
+                
+                //p = p + R*robot.P_tool;
+                //R = R*robot.R_tool;
+
             }
             Transform output = new Transform(R, p);
+            
             return output;
 
         }
@@ -363,34 +371,35 @@ namespace TestGeneralRoboticsToolboxNET
         }
         public static double Subproblem0(Vector<double> p, Vector<double> q, Vector<double> k)
         {
-            double min = double.MinValue;
-            if(!(p * q < min && k*q<min)) throw new ArgumentException(String.Format("k must be perpendicular to p and q"));
+            double min = double.Epsilon;
+            if (!(k * p < min && k * q < min)) throw new ArgumentException(String.Format("k must be perpendicular to p and q"));
             Vector<double> ep = p / p.L2Norm();
             Vector<double> eq = q / q.L2Norm();
-            double theta = 2 * Math.Atan2(ep.L2Norm() - eq.L2Norm(), ep.L2Norm() + eq.L2Norm());
+            double theta = 2 * Math.Atan2((ep - eq).L2Norm(), (ep + eq).L2Norm());
             if (k * Cross(p, q) < 0) return -theta;
             return theta;
         }
 
         public static double Subproblem1(Vector<double> p, Vector<double> q, Vector<double> k)
         {
-            double min = double.MinValue;
+            double min = double.Epsilon;
             Vector<double> minus = p - q;
-            if (minus.L2Norm() < min) return 0.0;
+            if (minus.L2Norm() < Math.Sqrt(min)) return 0.0;
             k = k / k.L2Norm();
-            Vector<double> pp = p - (p.DotProduct(k) * k);
-            Vector<double> qp = q - (q.DotProduct(k) * k);
+            Vector<double> pp = p - (p * k * k);
+            Vector<double> qp = q - (q * k * k);
 
             Vector<double> epp = pp / pp.L2Norm();
             Vector<double> eqp = qp / qp.L2Norm();
+
+            double theta = Subproblem0(epp, eqp, k);
+            if (Math.Abs(p.L2Norm() - q.L2Norm()) > (p.L2Norm() * (1 * 10 ^ -2))) Console.WriteLine("WARNING:||p|| and ||q|| must be the same!!!");
             
-            double theta = Subproblem0(epp,eqp,k);
-            if (Math.Abs(p.L2Norm()-q.L2Norm()) > (p.L2Norm()*(1*10^-2))) Console.WriteLine("WARNING:||p|| and ||q|| must be the same!!!");
             return theta;
         }
         public static double[] Subproblem2(Vector<double> p, Vector<double> q, Vector<double> k1, Vector<double> k2)
         {
-            double min = double.MinValue;
+            double min = double.Epsilon;
             double k12 = k1.DotProduct(k2);
             double pk = p.DotProduct(k2);
             double qk = q.DotProduct(k1);
@@ -404,7 +413,7 @@ namespace TestGeneralRoboticsToolboxNET
             amatrix[0, 1] = -1;
             amatrix[1, 0] = -1;
             amatrix[1, 1] = k12;
-            Vector<double> avector = Vector<double>.Build.DenseOfArray(new[] { pk,qk });
+            Vector<double> avector = Vector<double>.Build.DenseOfArray(new[] { pk, qk });
             Vector<double> a = amatrix.Multiply(avector / (Math.Pow(k12, 2) - 1));
             double bb = p.DotProduct(p) - a.DotProduct(a) - 2 * a[0] * a[1] * k12;
             if (Math.Abs(bb) < min) bb = 0;
@@ -413,7 +422,7 @@ namespace TestGeneralRoboticsToolboxNET
                 Console.WriteLine("WARNING:No solution found no intersection found between cones");
                 return new double[0];
             }
-            double gamma = Math.Sqrt(bb)/Cross(k1,k2).L2Norm();
+            double gamma = Math.Sqrt(bb) / Cross(k1, k2).L2Norm();
             if (Math.Abs(gamma) < min)
             {
                 Matrix<double> cmalt = Matrix<double>.Build.DenseOfRowVectors(k1, k2, Cross(k1, k2));
@@ -426,7 +435,9 @@ namespace TestGeneralRoboticsToolboxNET
                 Vector<double> c1alt = cmalt.Multiply(c1vecalt);
                 double theta2 = Subproblem1(k2, p, c1alt);
                 double theta1 = -Subproblem1(k1, q, c1alt);
-                double[] thetasfirst ={ theta1, theta2 };
+                double[] thetasfirst = { theta1, theta2 };
+               
+                
                 return thetasfirst;
             }
             Matrix<double> cm = Matrix<double>.Build.DenseOfRowVectors(k1, k2, Cross(k1, k2));
@@ -441,29 +452,30 @@ namespace TestGeneralRoboticsToolboxNET
             c2vec[2] = -gamma;
             Vector<double> c1 = cm.Multiply(c1vec);
             Vector<double> c2 = cm.Multiply(c2vec);
-            
+
             double theta1_1 = -Subproblem1(q, c1, k1);
             double theta1_2 = -Subproblem1(q, c2, k1);
             double theta2_1 = Subproblem1(p, c1, k2);
             double theta2_2 = Subproblem1(p, c2, k2);
-            double[] thetas = new double[4] {theta1_1, theta2_1 , theta1_2, theta2_2  };
+            double[] thetas = new double[4] { theta1_1, theta2_1, theta1_2, theta2_2 };
             return thetas;
             //NOTE:THIS DOES NOT RETURN MULTIDIM ARRAY LIKE PYTHON VERSION
         }
-        public static double[] Subproblem3(Vector<double> p, Vector<double> q, Vector<double> k,double d)
+        public static double[] Subproblem3(Vector<double> p, Vector<double> q, Vector<double> k, double d)
         {
-            
-            Vector<double> pp = p - ((p*k)*k);
-            Vector<double> qp = q - ((q*k)*k);
-            double dpsq = Math.Pow(d,2) - Math.Pow((k.DotProduct(p+q)),2);
+
+            Vector<double> pp = p - ((p * k) * k);
+            Vector<double> qp = q - ((q * k) * k);
+            double dpsq = Math.Pow(d, 2) - Math.Pow((k.DotProduct(p + q)), 2);
             double bb = -(pp.DotProduct(pp) + qp.DotProduct(qp) - dpsq) / (2 * pp.L2Norm() * qp.L2Norm());
-            if(dpsq < 0 || Math.Abs(bb) > 1)
+            if (dpsq < 0 || Math.Abs(bb) > 1)
             {
                 Console.WriteLine("No solution no rotation can achieve specified distance");
                 return new double[0];
             }
             double theta = Subproblem1(pp / pp.L2Norm(), qp / qp.L2Norm(), k);
             double phi = Math.Acos(bb);
+            Console.WriteLine("theta, phi {0}, {1}", theta, phi);
             if (Math.Abs(phi) > 0)
             {
                 return new double[2] { theta + phi, theta - phi };
@@ -472,7 +484,7 @@ namespace TestGeneralRoboticsToolboxNET
             {
                 return new double[1] { theta };
             }
-            
+
         }
         public static double[] Subproblem4(Vector<double> p, Vector<double> q, Vector<double> k, double d)
         {
@@ -492,6 +504,7 @@ namespace TestGeneralRoboticsToolboxNET
                 return new double[0];
             }
             double psi = Math.Asin(d);
+            
             return new double[2] { -phi+psi,- phi-psi+Math.PI };
 
         }
