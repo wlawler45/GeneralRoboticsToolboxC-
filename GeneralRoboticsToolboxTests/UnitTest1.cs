@@ -175,14 +175,14 @@ namespace GeneralRoboticsToolboxTests
                 new[] { -0.5057639, -0.1340537, 0.8521928 },
                 new[] { 0.6456962, -0.7139224, 0.2709081 },
                 new[] { 0.5720833, 0.6872731, 0.4476342 }));
-            float[] k = new float[3];
+            Vector<double> k = Vector<double>.Build.Dense(3);
             for (int i = 0; i < rot.Item1.Count; i++)
             {
-                k[i] = (float)rot.Item1[i];
+                k[i] = (double)rot.Item1[i];
             }
-            float theta = (float)rot.Item2;
-            Vector<float> q_t = Vector<float>.Build.DenseOfArray(new[] { (float)0.2387194, (float)0.4360402, (float)0.2933459, (float)0.8165967 });
-            Vector<float> q = GeneralRoboticsToolbox.Rot2Q(k, theta);
+            double theta = (double)rot.Item2;
+            Vector<double> q_t = Vector<double>.Build.DenseOfArray(new[] { 0.2387194, 0.4360402, 0.2933459, 0.8165967 });
+            Vector<double> q = GeneralRoboticsToolbox.Rot2Q(k, theta);
             Assert.IsTrue(q.AlmostEqual(q_t, 1 * 10 ^ -6));
         }
 

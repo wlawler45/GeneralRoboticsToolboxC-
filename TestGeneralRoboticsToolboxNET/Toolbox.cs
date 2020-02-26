@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
+using MathNet.Spatial.Euclidean;
 
 namespace TestGeneralRoboticsToolboxNET
 {
@@ -164,11 +165,11 @@ namespace TestGeneralRoboticsToolboxNET
             }
             return new Tuple<Vector<double>, double>(k, theta);
         }
-        public static Vector<float> Rot2Q(float[] k, float theta)
+        public static Vector<double> Rot2Q(Vector<double> k, double theta)
         {
-            Vector3 kvec = new Vector3(k[0], k[1], k[2]);
-            Quaternion quat = Quaternion.CreateFromAxisAngle(kvec, theta);
-            Vector<float> output = Vector<float>.Build.DenseOfArray(new[] { quat.W, quat.X, quat.Y, quat.Z });
+            double s1 = Math.Sin(theta / 2.0);
+            double c1 = Math.Cos(theta / 2.0);            
+            Vector<double> output = Vector<double>.Build.DenseOfArray(new[] { c1, k[0]*s1, k[1]*s1, k[2]*s1 });
             return output;
         }
         public static Vector<double> Quatcomplement(Vector<double> q)
