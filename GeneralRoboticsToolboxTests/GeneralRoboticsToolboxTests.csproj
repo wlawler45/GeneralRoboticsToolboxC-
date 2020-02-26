@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TestGeneralRoboticsToolboxNET\GeneralRoboticsToolboxNET.csproj" />
+    <ProjectReference Include="..\GeneralRoboticsToolboxNET\GeneralRoboticsToolboxNET.csproj" />
   </ItemGroup>
 
 </Project>
