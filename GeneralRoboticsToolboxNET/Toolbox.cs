@@ -46,6 +46,7 @@ namespace TestGeneralRoboticsToolboxNET
         {
             double[] inv = { (-khat[1, 2] + khat[2, 1]), (khat[0, 2] - khat[2, 0]), (-khat[0, 1] + khat[1, 0]) };
             Vector<double> output = Vector<double>.Build.DenseOfArray(inv);
+            output /= 2;
             return output;
         }
         public static Matrix<double> Rot(Vector<double> k, double theta)
@@ -58,11 +59,12 @@ namespace TestGeneralRoboticsToolboxNET
         public static Tuple<Vector<double>, double> R2rot(Matrix<double> R)
         {
             Matrix<double> R1 = R - R.Transpose();
-            double sin_theta = R1.L2Norm() / Math.Sqrt(8);
+            //double sin_theta = R1.L2Norm() / Math.Sqrt(8);
+            double sin_theta = R1.L2Norm() / 2.0;
             double cos_theta = (R.Trace() - 1.0) / 2.0;
             double theta = Math.Atan2(sin_theta, cos_theta);
             Vector<double> k;
-            if (sin_theta < (1 * 10 ^ -6))
+            if (sin_theta < (1e-6))
             {
                 if (cos_theta > 0)
                 {
@@ -72,31 +74,31 @@ namespace TestGeneralRoboticsToolboxNET
                 }
                 else
                 {
-                    Matrix<Double> eye = Matrix<Double>.Build.DenseIdentity(3);
+                    Matrix<double> eye = Matrix<Double>.Build.DenseIdentity(3);
                     Matrix<double> B = (1.0 / 2.0) * (R + eye);
                     k = Vector<double>.Build.DenseOfArray(new[] { Math.Sqrt(B[0, 0]), Math.Sqrt(B[1, 1]), Math.Sqrt(B[2, 2]) });
-                    if (Math.Abs(k[0]) > (1 * 10 ^ -6))
+                    if (Math.Abs(k[0]) > (1e-6))
                     {
                         k[1] = k[1] * Math.Sign(B[0, 1] / k[0]);
                         k[2] = k[2] * Math.Sign(B[0, 2] / k[0]);
                     }
-                    else if (Math.Abs(k[1]) > (1 * 10 ^ -6))
+                    else if (Math.Abs(k[1]) > (1e-6))
                     {
                         k[2] = k[2] * Math.Sign(B[0, 2] / k[1]);
                     }
                     return new Tuple<Vector<double>, double>(k, Math.PI);
 
                 }
-
             }
             k = Vector<double>.Build.DenseOfArray(new[] { 0.0, 0.0, 0.0 });
             Vector<double> inv = Invhat(R1);
+
             for (int i = 0; i < k.Count; i++)
             {
                 k[i] = inv[i] / (2.0 * sin_theta);
             }
-            return new Tuple<Vector<double>, double>(k, theta);
 
+            return new Tuple<Vector<double>, double>(k, theta);
         }
         public static Matrix<double> Screw_matrix(Vector<double> r)
         {
@@ -166,15 +168,16 @@ namespace TestGeneralRoboticsToolboxNET
         public static Tuple<Vector<double>, double> Q2Rot(Vector<double> q)
         {
             double theta = 2 * Math.Acos(q[0]);
+            Console.WriteLine(theta);
             Vector<double> k;
-            if (Math.Abs(theta) < (1 * 10 ^ -6))
+            if (Math.Abs(theta) < 1e-6)
             {
                 k = Vector<double>.Build.DenseOfArray(new[] { 0.0, 0.0, 1.0 });
 
                 return new Tuple<Vector<double>, double>(k, 0);
             }
             k = Vector<double>.Build.DenseOfArray(new[] { 0.0, 0.0, 1.0 });
-            for (int i = 1; i > 4; i++)
+            for (int i = 1; i < k.Count + 1; i++)
             {
                 k[i - 1] = q[i] / Math.Sin(theta / 2.0);
             }
@@ -250,9 +253,9 @@ namespace TestGeneralRoboticsToolboxNET
             Vector<double> output;
             double r = Math.Atan2(R[2, 1], R[2, 2]);
             double y = Math.Atan2(R[1, 0], R[0, 0]);
-            Console.WriteLine(R);
+            //Console.WriteLine(R);
             double normie = (R.SubMatrix(2, 1, 1, 2)).L2Norm();
-            double p = Math.Atan2(R[2, 0], normie);
+            double p = Math.Atan2(-R[2, 0], normie);
             return output = Vector<double>.Build.DenseOfArray(new[] { r, p, y });
         }
 
@@ -409,7 +412,7 @@ namespace TestGeneralRoboticsToolboxNET
             Vector<double> eqp = qp / qp.L2Norm();
 
             double theta = Subproblem0(epp, eqp, k);
-            if (Math.Abs(p.L2Norm() - q.L2Norm()) > (p.L2Norm() * (1 * 10 ^ -2))) Console.WriteLine("WARNING:||p|| and ||q|| must be the same!!!");
+            if (Math.Abs(p.L2Norm() - q.L2Norm()) > (p.L2Norm() * (1e-2))) Console.WriteLine("WARNING:||p|| and ||q|| must be the same!!!");
             
             return theta;
         }
