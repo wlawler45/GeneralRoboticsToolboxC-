@@ -24,7 +24,7 @@ using System.Xml.XPath;
 using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
 
-namespace TestGeneralRoboticsToolboxNET
+namespace GeneralRoboticsToolbox
 {
 
     
@@ -168,7 +168,7 @@ namespace TestGeneralRoboticsToolboxNET
                                 string rpy = origins.Attribute("rpy").Value;
                                 double[] rpyvalues = Array.ConvertAll(xyz.Split(separator, count, StringSplitOptions.RemoveEmptyEntries), Double.Parse);
                                 Vector<double> originrpy = Vector<double>.Build.DenseOfArray(rpyvalues);
-                                Matrix<double> R = GeneralRoboticsToolbox.Rpy2R(originrpy);
+                                Matrix<double> R = Functions.rpy2R(originrpy);
                                 Transform origin = new Transform(R, originxyz);
                                 current_link.Origin = origin;
                                 has_origin = true;
@@ -246,7 +246,7 @@ namespace TestGeneralRoboticsToolboxNET
                             string rpy = origins.Attribute("rpy").Value;
                             double[] rpyvalues = Array.ConvertAll(xyz.Split(separator, count, StringSplitOptions.RemoveEmptyEntries), Double.Parse);
                             Vector<double> originrpy = Vector<double>.Build.DenseOfArray(rpyvalues);
-                            Matrix<double> R = GeneralRoboticsToolbox.Rpy2R(originrpy);
+                            Matrix<double> R = Functions.rpy2R(originrpy);
                             Transform origin = new Transform(R, originxyz);
                             current_joint.Origin = origin;
 

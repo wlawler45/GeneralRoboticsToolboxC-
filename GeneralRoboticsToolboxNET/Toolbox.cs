@@ -25,11 +25,10 @@ using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using MathNet.Spatial.Euclidean;
 
-namespace TestGeneralRoboticsToolboxNET
+namespace GeneralRoboticsToolbox
 {
-    public class GeneralRoboticsToolbox
-    {
-        public GeneralRoboticsToolbox() { }
+    public static class Functions
+    {        
         public static Matrix<double> Hat(Vector<double> k)
         {
             Matrix<double> khat = Matrix<double>.Build.Dense(3, 3);
@@ -239,7 +238,7 @@ namespace TestGeneralRoboticsToolboxNET
             }
             return J;
         }
-        public static Matrix<double> Rpy2R(Vector<double> rpy)
+        public static Matrix<double> rpy2R(Vector<double> rpy)
         {
             Vector<double> k;
             Matrix<double> rotation1 = Rot(k = Vector<double>.Build.DenseOfArray(new[] { 0.0, 0.0, 1.0 }), rpy[2]);
@@ -247,7 +246,7 @@ namespace TestGeneralRoboticsToolboxNET
             Matrix<double> rotation3 = Rot(k = Vector<double>.Build.DenseOfArray(new[] { 1.0, 0.0, 0.0 }), rpy[0]);
             return rotation1.Multiply(rotation2).Multiply(rotation3);
         }
-        public static Vector<double> R2Rpy(Matrix<double> R)
+        public static Vector<double> R2rpy(Matrix<double> R)
         {
             //if(R.Column(0).L2Norm())
             Vector<double> output;

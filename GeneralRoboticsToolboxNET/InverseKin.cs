@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
 
-namespace TestGeneralRoboticsToolboxNET
+namespace GeneralRoboticsToolbox
 {
     public class NormalizeJoints
     {
@@ -313,46 +313,46 @@ namespace TestGeneralRoboticsToolboxNET
 
             double d1 = ey*(P.Column(1).Add(P.Column(2)).Add(P.Column(3)));
             Vector<double> v1 = desired_pose.P.Subtract( desired_pose.R * P.Column(6));
-            double[] Q1 = GeneralRoboticsToolbox.Subproblem4(ey, v1, -H.Column(0), d1);
+            double[] Q1 = Functions.Subproblem4(ey, v1, -H.Column(0), d1);
             NormalizeJoints normalize = new NormalizeJoints(robot, last_joints);
             
             double[] first_normalize = normalize.FindNormalizedJoints(0, Q1);
             foreach (double q1 in first_normalize)
             {
-                Matrix<double> R01 = GeneralRoboticsToolbox.Rot(H.Column(0), q1);
+                Matrix<double> R01 = Functions.Rot(H.Column(0), q1);
                 Vector<double> p26_q1 = R01.TransposeThisAndMultiply(desired_pose.P - desired_pose.R * P.Column(6)).Subtract(P.Column(0).Add(P.Column(1)));
                 double d3 = p26_q1.L2Norm();
                 Vector<double> v3 = P.Column(2);
                 Vector<double> p3 = P.Column(3);
-                double[] Q3 = GeneralRoboticsToolbox.Subproblem3(p3, v3, H.Column(2), d3);
+                double[] Q3 = Functions.Subproblem3(p3, v3, H.Column(2), d3);
                 double[] second_normalize = normalize.FindNormalizedJoints(2, Q3);
                 foreach (double q3 in second_normalize)
                 {
-                    Matrix<double> R23 = GeneralRoboticsToolbox.Rot(H.Column(2), q3);
+                    Matrix<double> R23 = Functions.Rot(H.Column(2), q3);
                     Vector<double> v2 = p26_q1;
                     Vector<double> p2 = P.Column(2) + R23 * P.Column(3);
-                    double q2 = GeneralRoboticsToolbox.Subproblem1(p2, v2, H.Column(1));
+                    double q2 = Functions.Subproblem1(p2, v2, H.Column(1));
                     double[] q2_array = normalize.FindNormalizedJoints(1, new[] { q2 });
                     if (q2_array.Length == 0) continue;
                     q2 = q2_array[0];
-                    Matrix<double> R12 = GeneralRoboticsToolbox.Rot(H.Column(1), q2);
+                    Matrix<double> R12 = Functions.Rot(H.Column(1), q2);
                     Matrix<double> R03 = R01 * R12 * R23;
                     Matrix<double> R36 = R03.Transpose() * desired_pose.R;
                     Vector<double> v4 = R36 * H.Column(5);
                     Vector<double> p4 = H.Column(5);
-                    double[] Q4_Q5 = GeneralRoboticsToolbox.Subproblem2(p4, v4, H.Column(3), H.Column(4));
+                    double[] Q4_Q5 = Functions.Subproblem2(p4, v4, H.Column(3), H.Column(4));
                     double[][] third_normalize = normalize.FindNormalizedJoints(new[] { 3,4}, Q4_Q5);
                     Console.WriteLine("size of qs {0}, {1}", third_normalize[0].Length, third_normalize[1].Length);
                     int minoftwo = Math.Min(third_normalize[0].Length, third_normalize[1].Length);
                     Console.WriteLine(minoftwo);
                     for (int q=0; q < minoftwo; q++)
                     {
-                        Matrix<double> R35 = GeneralRoboticsToolbox.Rot(H.Column(3), third_normalize[0][q])*GeneralRoboticsToolbox.Rot(H.Column(4), third_normalize[1][q]);
+                        Matrix<double> R35 = Functions.Rot(H.Column(3), third_normalize[0][q])*Functions.Rot(H.Column(4), third_normalize[1][q]);
                         Matrix<double> R05 = R03 * R35;
                         Matrix<double> R56 = R05.Transpose() * desired_pose.R;
                         Vector<double> v6 = R56 * H.Column(4);
                         Vector<double> p6 = H.Column(4);
-                        double q6 = GeneralRoboticsToolbox.Subproblem1(p6, v6, H.Column(5));
+                        double q6 = Functions.Subproblem1(p6, v6, H.Column(5));
                         double[] q6_array = normalize.FindNormalizedJoints(5, new[] { q6 });
                         if (q6_array.Length == 0) continue;
                         q6 = q6_array[0];

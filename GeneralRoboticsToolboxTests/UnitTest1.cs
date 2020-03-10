@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using TestGeneralRoboticsToolboxNET;
+using static GeneralRoboticsToolbox.Functions;
+using GeneralRoboticsToolbox;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using MathNet.Numerics;
@@ -22,7 +23,7 @@ namespace GeneralRoboticsToolboxTests
             khat[1, 2] = -1;
             khat[2, 0] = -2;
             khat[2, 1] = 1;
-            Matrix<double> k_hat = GeneralRoboticsToolbox.Hat(k);
+            Matrix<double> k_hat = Hat(k);
             Assert.AreEqual(k_hat, khat, "Hat didn't work");
         }
         [TestMethod]
@@ -42,24 +43,24 @@ namespace GeneralRoboticsToolboxTests
 
             rot1 = rot1.Transpose();
 
-            Matrix<double> rot = GeneralRoboticsToolbox.Rot(k, Math.PI / 2);
+            Matrix<double> rot = Rot(k, Math.PI / 2);
 
             Assert.IsTrue(rot1.AlmostEqual(rot, 1e-6), "rot1 failed");
             Matrix<double> rot2 = Matrix<double>.Build.DenseOfRowArrays(new[] { 0, 0, -1.0 }, new[] { 0, 1.0, 0 }, new[] { 1.0, 0, 0 });
             Vector<double> k2 = Vector<double>.Build.DenseOfArray(new[] { 0, 1.0, 0 });
             rot2 = rot2.Transpose();
-            Matrix<double> rot_2 = GeneralRoboticsToolbox.Rot(k2, Math.PI / 2);
+            Matrix<double> rot_2 = Rot(k2, Math.PI / 2);
             Assert.IsTrue(rot2.AlmostEqual(rot_2, 1e-6), "rot2 failed");
 
             Matrix<double> rot3 = Matrix<double>.Build.DenseOfRowArrays(new[] { 0, 1.0, 0 }, new[] { -1.0, 0, 0 }, new[] { 0, 0, 1.0 });
             Vector<double> k3 = Vector<double>.Build.DenseOfArray(new[] { 0, 0, 1.0 });
             rot3 = rot3.Transpose();
-            Matrix<double> rot_3 = GeneralRoboticsToolbox.Rot(k3, Math.PI / 2);
+            Matrix<double> rot_3 = Rot(k3, Math.PI / 2);
             Assert.IsTrue(rot3.AlmostEqual(rot_3, 1e-6), "rot3 failed");
 
             Matrix<double> rot4 = Matrix<double>.Build.DenseOfRowArrays(new[] { -0.5057639, -0.1340537, 0.8521928 }, new[] { 0.6456962, -0.7139224, 0.2709081 }, new[] { 0.5720833, 0.6872731, 0.4476342 });
             Vector<double> k4 = Vector<double>.Build.DenseOfArray(new[] { 0.4490221, 0.30207945, 0.84090853 });
-            Matrix<double> rot_4 = GeneralRoboticsToolbox.Rot(k4, 2.65949884);
+            Matrix<double> rot_4 = Rot(k4, 2.65949884);
             Assert.IsTrue(rot4.AlmostEqual(rot_4, 1e-6), "rot4 failed");
         }
 
@@ -68,9 +69,9 @@ namespace GeneralRoboticsToolboxTests
         {
             void _R2rot_test(Vector<double> k, double theta1)
             {
-                Matrix<double> R = GeneralRoboticsToolbox.Rot(k, theta1);
+                Matrix<double> R = Rot(k, theta1);
 
-                Tuple<Vector<double>, double> r2_vals = GeneralRoboticsToolbox.R2rot(R);
+                Tuple<Vector<double>, double> r2_vals = R2rot(R);
                 Vector<double> _k2 = r2_vals.Item1;
                 double theta2 = r2_vals.Item2;
                 if (Math.Abs(theta1 - theta2) > (theta1 + theta2))
@@ -127,7 +128,7 @@ namespace GeneralRoboticsToolboxTests
         public void TestScrewMatrix()
         {
             Vector<double> k = Vector<double>.Build.DenseOfArray(new[] { 1.0, 2.0, 3.0 });
-            Matrix<double> G = GeneralRoboticsToolbox.Screw_matrix(k);
+            Matrix<double> G = Screw_matrix(k);
             Matrix<double> G_t = Matrix<double>.Build.DenseOfRowArrays(
                 new[] { 1.0, 0, 0, 0, -3, 2 },
                 new[] { 0, 1.0, 0, 3, 0, -1 },
@@ -146,7 +147,7 @@ namespace GeneralRoboticsToolboxTests
                 new[] { 0.6456962, -0.7139224, 0.2709081 },
                 new[] { 0.5720833, 0.6872731, 0.4476342 });
             Vector<double> q_t = Vector<double>.Build.DenseOfArray(new[] { 0.2387194, 0.4360402, 0.2933459, 0.8165967 });
-            Vector<double> q = GeneralRoboticsToolbox.R2Q(rot);
+            Vector<double> q = R2Q(rot);
             Assert.IsTrue(q.AlmostEqual(q_t, 1e-6));
         }
 
@@ -158,14 +159,14 @@ namespace GeneralRoboticsToolboxTests
                 new[] { 0.6456962, -0.7139224, 0.2709081 },
                 new[] { 0.5720833, 0.6872731, 0.4476342 });
             Vector<double> q = Vector<double>.Build.DenseOfArray(new[] { 0.2387194, 0.4360402, 0.2933459, 0.8165967 });
-            Matrix<double> rot = GeneralRoboticsToolbox.Q2R(q);
+            Matrix<double> rot = Q2R(q);
             Assert.IsTrue(rot.AlmostEqual(rot_t, 1e-6));
         }
 
         [TestMethod]
         public void TestRot2Q()
         {
-            Tuple<Vector<double>, double> rot = GeneralRoboticsToolbox.R2rot(Matrix<double>.Build.DenseOfRowArrays(
+            Tuple<Vector<double>, double> rot = R2rot(Matrix<double>.Build.DenseOfRowArrays(
                 new[] { -0.5057639, -0.1340537, 0.8521928 },
                 new[] { 0.6456962, -0.7139224, 0.2709081 },
                 new[] { 0.5720833, 0.6872731, 0.4476342 }));
@@ -176,7 +177,7 @@ namespace GeneralRoboticsToolboxTests
             }
             double theta = (double)rot.Item2;
             Vector<double> q_t = Vector<double>.Build.DenseOfArray(new[] { 0.2387194, 0.4360402, 0.2933459, 0.8165967 });
-            Vector<double> q = GeneralRoboticsToolbox.Rot2Q(k, theta);
+            Vector<double> q = Rot2Q(k, theta);
             Assert.IsTrue(q.AlmostEqual(q_t, 1e-6));
         }
 
@@ -188,17 +189,17 @@ namespace GeneralRoboticsToolboxTests
                 new[] { 0.6456962, -0.7139224, 0.2709081 },
                 new[] { 0.5720833, 0.6872731, 0.4476342 });
             Vector<double> q = Vector<double>.Build.DenseOfArray(new[] { 0.2387194, 0.4360402, 0.2933459, 0.8165967 });
-            Tuple<Vector<double>, double> rot = GeneralRoboticsToolbox.Q2Rot(q);
+            Tuple<Vector<double>, double> rot = Q2Rot(q);
             Vector<double> k = rot.Item1;
             double theta = rot.Item2;
-            Assert.IsTrue(GeneralRoboticsToolbox.Rot(k, theta).AlmostEqual(rot_t, 1e-6));
+            Assert.IsTrue(Rot(k, theta).AlmostEqual(rot_t, 1e-6));
         }
 
         [TestMethod]
         public void TestQuatcomplement()
         {
             Vector<double> q = Vector<double>.Build.DenseOfArray(new[] { 0.2387194, 0.4360402, 0.2933459, 0.8165967 });
-            Vector<double> q_c = GeneralRoboticsToolbox.Quatcomplement(q);
+            Vector<double> q_c = Quatcomplement(q);
             Assert.IsTrue(q[0].AlmostEqual(q_c[0], 1e-8));
             Assert.IsTrue(q.SubVector(1, 3).AlmostEqual(-q_c.SubVector(1, 3), 1e-8));
         }
@@ -208,9 +209,9 @@ namespace GeneralRoboticsToolboxTests
         {
             Vector<double> q_1 = Vector<double>.Build.DenseOfArray(new[] { 0.63867877, 0.52251797, 0.56156573, 0.06089615 });
             Vector<double> q_2 = Vector<double>.Build.DenseOfArray(new[] { 0.35764716, 0.61051424, 0.11540801, 0.69716703 });
-            Matrix<double> R_t = GeneralRoboticsToolbox.Q2R(q_1).Multiply(GeneralRoboticsToolbox.Q2R(q_2));
-            Vector<double> q_t = GeneralRoboticsToolbox.R2Q(R_t);
-            Vector<double> q = GeneralRoboticsToolbox.Quatproduct(q_1).Multiply(q_2);
+            Matrix<double> R_t = Q2R(q_1).Multiply(Q2R(q_2));
+            Vector<double> q_t = R2Q(R_t);
+            Vector<double> q = Quatproduct(q_1).Multiply(q_2);
             Assert.IsTrue(q.AlmostEqual(q_t, 1e-6));
         }
 
@@ -218,7 +219,7 @@ namespace GeneralRoboticsToolboxTests
         public void TestQuatjacobian()
         {
             Vector<double> q = Vector<double>.Build.DenseOfArray(new[] { 0.63867877, 0.52251797, 0.56156573, 0.06089615 });
-            Matrix<double> J = GeneralRoboticsToolbox.Quatjacobian(q);
+            Matrix<double> J = Quatjacobian(q);
             Matrix<double> J_t = Matrix<double>.Build.DenseOfRowArrays(new[] { -0.26125898, -0.28078286, -0.03044808 },
                 new[] { 0.31933938, 0.03044808, -0.28078286 },
                 new[] { -0.03044808, 0.31933938, 0.26125898 },
@@ -231,22 +232,22 @@ namespace GeneralRoboticsToolboxTests
         // singularRPI requested like this:
         //[ExpectedException(typeof(ArgumentException),
         //"A userId of null was inappropriately allowed.")]
-        public void TestRpy2R()
+        public void Testrpy2R()
         {
             Vector<double> rpy1 = Vector<double>.Build.DenseOfArray(new[] { 10 * Math.PI / 180, -30 * Math.PI / 180, 90 * Math.PI / 180 });
 
-            Matrix<double> R1 = GeneralRoboticsToolbox.Rpy2R(rpy1);
+            Matrix<double> R1 = rpy2R(rpy1);
             Matrix<double> R1_t = Matrix<double>.Build.DenseOfRowArrays(
                 new[] { -0.0000000, -0.9848077, 0.1736482 },
                 new[] { 0.8660254, -0.0868241, -0.4924039 },
                 new[] { 0.5000000, 0.1503837, 0.8528686 });
             Assert.IsTrue(R1.AlmostEqual(R1_t, 1e-6));
-            Vector<double> rpy2 = GeneralRoboticsToolbox.R2Rpy(R1);
+            Vector<double> rpy2 = R2rpy(R1);
             Assert.IsTrue(rpy1.AlmostEqual(rpy2, 1e-6));
 
             // Check singularity
             Vector<double> rpy3 = Vector<double>.Build.DenseOfArray(new[] { 10 * Math.PI / 180, 90 * Math.PI / 180, -30 * Math.PI / 180 });
-            Matrix<double> R3 = GeneralRoboticsToolbox.Rpy2R(rpy3);
+            Matrix<double> R3 = rpy2R(rpy3);
         }
 
         public Robot puma260b_robot()
@@ -298,7 +299,7 @@ namespace GeneralRoboticsToolboxTests
         public Robot puma260b_robot_tool()
         {
             Robot robot = puma260b_robot();
-            robot.R_tool = GeneralRoboticsToolbox.Rot(Vector<double>.Build.DenseOfArray(new[] { 0, 1.0, 0 }), Math.PI / 2.0);
+            robot.R_tool = Rot(Vector<double>.Build.DenseOfArray(new[] { 0, 1.0, 0 }), Math.PI / 2.0);
             robot.P_tool = Vector<double>.Build.DenseOfArray(new[] { 0.05, 0, 0 });
             return robot;
         }
@@ -308,7 +309,7 @@ namespace GeneralRoboticsToolboxTests
         {
             Robot puma = this.puma260b_robot();
 
-            Transform pose = GeneralRoboticsToolbox.Fwdkin(puma, new[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 });
+            Transform pose = Fwdkin(puma, new[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 });
             Assert.IsTrue(pose.R.AlmostEqual(Matrix<double>.Build.DenseIdentity(3), 1e-8));
             Assert.IsTrue(pose.P.AlmostEqual(Vector<double>.Build.DenseOfArray(new[] { 10.0, -4.9, 4.25 }), 1e-6));
 
@@ -318,8 +319,8 @@ namespace GeneralRoboticsToolboxTests
             {
                 joints2[i] = joints2[i] * Math.PI / 180.0;
             }
-            Transform pose2 = GeneralRoboticsToolbox.Fwdkin(puma, joints2);
-            Matrix<double> rot2 = GeneralRoboticsToolbox.Rot(Vector<double>.Build.DenseOfArray(new[] { 0, 0, 1.0 }), Math.PI).Multiply(GeneralRoboticsToolbox.Rot(Vector<double>.Build.DenseOfArray(new[] { 0, 1.0, 0 }), -Math.PI / 2));
+            Transform pose2 = Fwdkin(puma, joints2);
+            Matrix<double> rot2 = Rot(Vector<double>.Build.DenseOfArray(new[] { 0, 0, 1.0 }), Math.PI).Multiply(Rot(Vector<double>.Build.DenseOfArray(new[] { 0, 1.0, 0 }), -Math.PI / 2));
             Assert.IsTrue(pose2.R.AlmostEqual(rot2, 1e-6));
             Assert.IsTrue(pose2.P.AlmostEqual(Vector<double>.Build.DenseOfArray(new[] { -0.75, 4.9, 31 }) * 0.0254, 1e-6));
 
@@ -329,7 +330,7 @@ namespace GeneralRoboticsToolboxTests
             {
                 joints3[i] = joints3[i] * Math.PI / 180.0;
             }
-            Transform pose3 = GeneralRoboticsToolbox.Fwdkin(puma, joints3);
+            Transform pose3 = Fwdkin(puma, joints3);
             Matrix<double> pose3_R_t = Matrix<double>.Build.DenseOfRowArrays(
                 new[] { 0.4274, 0.8069, -0.4076 },
                 new[] { 0.4455, -0.5804, -0.6817 },
@@ -341,7 +342,7 @@ namespace GeneralRoboticsToolboxTests
 
             Robot puma_tool = this.puma260b_robot_tool();
 
-            Transform pose4 = GeneralRoboticsToolbox.Fwdkin(puma_tool, joints3);
+            Transform pose4 = Fwdkin(puma_tool, joints3);
             Matrix<double> pose4_R_t = Matrix<double>.Build.DenseOfRowArrays(
                 new[] { 0.4076, 0.8069, 0.4274 },
                 new[] { 0.681654, -0.580357, 0.44557 },
@@ -360,7 +361,7 @@ namespace GeneralRoboticsToolboxTests
         {
             //Home configuration (See Page 2-2 of Puma 260 manual)
             Robot puma = this.puma260b_robot();
-            Matrix<double> J = GeneralRoboticsToolbox.Robotjacobian(puma, new[] { 0.0, 0, 0, 0, 0, 0 });
+            Matrix<double> J = Robotjacobian(puma, new[] { 0.0, 0, 0, 0, 0, 0 });
             Assert.IsTrue(J.SubMatrix(0, 4, 0, J.ColumnCount).AlmostEqual(puma.H, 1e-4));
 
             // Another right-angle configuration
@@ -369,7 +370,7 @@ namespace GeneralRoboticsToolboxTests
             {
                 joints2[i] = joints2[i] * Math.PI / 180.0;
             }
-            Matrix<double> J2 = GeneralRoboticsToolbox.Robotjacobian(puma, joints2);
+            Matrix<double> J2 = Robotjacobian(puma, joints2);
             Matrix<double> J2_t = Matrix<double>.Build.DenseOfRowArrays(
                 new[] { 0, 0, 0, 0, -1.0, 0 },
                 new[] { 0, -1.0, -1, 0, 0, 0 },
@@ -385,7 +386,7 @@ namespace GeneralRoboticsToolboxTests
             {
                 joints3[i] = joints3[i] * Math.PI / 180.0;
             }
-            Matrix<double> J3 = GeneralRoboticsToolbox.Robotjacobian(puma, joints3);
+            Matrix<double> J3 = Robotjacobian(puma, joints3);
             Matrix<double> J3_t = Matrix<double>.Build.DenseOfRowArrays(
                 new[] { 0, -0.766, -0.766, -0.6179, -0.7765, 0.4274 },
                 new[] { 0, 0.6428, 0.6428, -0.7364, 0.6265, 0.4456 },
@@ -404,39 +405,39 @@ namespace GeneralRoboticsToolboxTests
             Vector<double> z = Vector<double>.Build.DenseOfArray(new[] { 0, 0, 1.0 });
 
             // Subproblem0
-            Assert.IsTrue(GeneralRoboticsToolbox.Subproblem0(x, y, z) == Math.PI / 2);
+            Assert.IsTrue(Subproblem0(x, y, z) == Math.PI / 2);
 
             // Subproblem1
             Vector<double> k1 = (x + z) / (x + z).L2Norm();
             Vector<double> k2 = (y + z) / (y + z).L2Norm();
-            Assert.IsTrue(GeneralRoboticsToolbox.Subproblem1(k1, k2, z) == Math.PI / 2);
+            Assert.IsTrue(Subproblem1(k1, k2, z) == Math.PI / 2);
 
             // Subproblem2
             Vector<double> p2 = x;
             Vector<double> q2 = x.Add(y).Add(z);
             q2 = q2 / q2.L2Norm();
-            double[] a2 = GeneralRoboticsToolbox.Subproblem2(p2, q2, z, y);
+            double[] a2 = Subproblem2(p2, q2, z, y);
             Assert.IsTrue(a2.Length == 4);
             //NOTE: DIFFERENT THAN PYTHON VERSION
 
-            Matrix<double> r1_0 = GeneralRoboticsToolbox.Rot(z, a2[0]);
-            Matrix<double> r1_1 = GeneralRoboticsToolbox.Rot(y, a2[1]);
+            Matrix<double> r1_0 = Rot(z, a2[0]);
+            Matrix<double> r1_1 = Rot(y, a2[1]);
             Vector<double> r1 = (r1_0 * r1_1).Column(0);
 
-            Matrix<double> r2_0 = GeneralRoboticsToolbox.Rot(z, a2[2]);
-            Matrix<double> r2_1 = GeneralRoboticsToolbox.Rot(y, a2[3]);
+            Matrix<double> r2_0 = Rot(z, a2[2]);
+            Matrix<double> r2_1 = Rot(y, a2[3]);
             Vector<double> r2 = (r2_0 * r2_1).Column(0);
 
             Assert.IsTrue(r1.AlmostEqual(q2, 1e-4));
             Assert.IsTrue(r2.AlmostEqual(q2, 1e-4));
 
-            double[] a3 = GeneralRoboticsToolbox.Subproblem2(x, z, z, y);
+            double[] a3 = Subproblem2(x, z, z, y);
             //Console.WriteLine(a3);
             Assert.IsTrue(a3.Length == 2);
             //NOTE: DIFFERENT THAN PYTHON VERSION
 
-            Matrix<double> r3_0 = GeneralRoboticsToolbox.Rot(z, a3[0]);
-            Matrix<double> r3_1 = GeneralRoboticsToolbox.Rot(y, a3[1]);
+            Matrix<double> r3_0 = Rot(z, a3[0]);
+            Matrix<double> r3_1 = Rot(y, a3[1]);
             Vector<double> r3 = (r3_0 * r3_1).Column(0);
             Assert.IsTrue(r3.AlmostEqual(z, 1e-4));
 
@@ -444,24 +445,24 @@ namespace GeneralRoboticsToolboxTests
             Vector<double> p4 = Vector<double>.Build.DenseOfArray(new[] { .5, 0, 0 });
             Vector<double> q4 = Vector<double>.Build.DenseOfArray(new[] { 0, .75, 0 });
 
-            double[] a4 = GeneralRoboticsToolbox.Subproblem3(p4, q4, z, .5);
-            double[] a5 = GeneralRoboticsToolbox.Subproblem3(p4, q4, z, 1.25);
+            double[] a4 = Subproblem3(p4, q4, z, .5);
+            double[] a5 = Subproblem3(p4, q4, z, 1.25);
             Assert.IsTrue(a4.Length == 2);
 
-            Assert.IsTrue((q4 + GeneralRoboticsToolbox.Rot(z, a4[0]) * p4).L2Norm().AlmostEqual(0.5, 1e-8));
-            Assert.IsTrue((q4 + GeneralRoboticsToolbox.Rot(z, a4[1]) * p4).L2Norm().AlmostEqual(0.5, 1e-8));
+            Assert.IsTrue((q4 + Rot(z, a4[0]) * p4).L2Norm().AlmostEqual(0.5, 1e-8));
+            Assert.IsTrue((q4 + Rot(z, a4[1]) * p4).L2Norm().AlmostEqual(0.5, 1e-8));
 
             Assert.IsTrue(a5.Length == 1);
-            Assert.IsTrue((q4 + GeneralRoboticsToolbox.Rot(z, a5[0]) * p4).L2Norm().AlmostEqual(1.25, 1e-8));
+            Assert.IsTrue((q4 + Rot(z, a5[0]) * p4).L2Norm().AlmostEqual(1.25, 1e-8));
 
             // Subproblem4
             Vector<double> p6 = y;
             Vector<double> q6 = Vector<double>.Build.DenseOfArray(new[] { .8, .2, .5 });
             double d6 = .3;
 
-            double[] a6 = GeneralRoboticsToolbox.Subproblem4(p6, q6, z, d6);
-            Assert.IsTrue((p6 * GeneralRoboticsToolbox.Rot(z, a6[0]) * q6).AlmostEqual(d6, 1e-4));
-            Assert.IsTrue((p6 * GeneralRoboticsToolbox.Rot(z, a6[1]) * q6).AlmostEqual(d6, 1e-4));
+            double[] a6 = Subproblem4(p6, q6, z, d6);
+            Assert.IsTrue((p6 * Rot(z, a6[0]) * q6).AlmostEqual(d6, 1e-4));
+            Assert.IsTrue((p6 * Rot(z, a6[1]) * q6).AlmostEqual(d6, 1e-4));
         }
 
         [TestMethod]
@@ -490,7 +491,7 @@ namespace GeneralRoboticsToolboxTests
 
         public bool _test_configuration(Robot r, double[] theta)
         {
-            Transform pose1 = GeneralRoboticsToolbox.Fwdkin(r, theta);
+            Transform pose1 = Fwdkin(r, theta);
 
             double[][] theta2 = InverseKin.robot6_sphericalwrist_invkin(r, pose1);
             Console.WriteLine("hello");
@@ -520,7 +521,7 @@ namespace GeneralRoboticsToolboxTests
             foreach(double[] thetavals in theta2)
             {
                 
-                Transform pose2 = GeneralRoboticsToolbox.Fwdkin(r, thetavals);
+                Transform pose2 = Fwdkin(r, thetavals);
                 Console.WriteLine("pose 1={0}", pose1);
                 Console.WriteLine("pose 2={0}", pose2);
                 if (!(pose1 == pose2))
@@ -533,10 +534,10 @@ namespace GeneralRoboticsToolboxTests
         }
         public bool _test_last_configuration(Robot r, double[] theta,double[] last_theta)
         {
-            Transform pose1 = GeneralRoboticsToolbox.Fwdkin(r, theta);
+            Transform pose1 = Fwdkin(r, theta);
 
             double[][] theta2 = InverseKin.robot6_sphericalwrist_invkin(r, pose1);
-            Transform pose2 = GeneralRoboticsToolbox.Fwdkin(r, theta2[0]);
+            Transform pose2 = Fwdkin(r, theta2[0]);
             if (!(pose1 == pose2))
             {
                 return false;
