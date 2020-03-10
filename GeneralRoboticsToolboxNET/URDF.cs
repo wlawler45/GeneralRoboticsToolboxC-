@@ -513,7 +513,7 @@ namespace GeneralRoboticsToolbox
                 }
                 Matrix<double> h = Matrix<double>.Build.Dense(3, robot_joints.Count);
                 Matrix<double> p = Matrix<double>.Build.Dense(3, robot_joints.Count+1);
-                Int32[] joint_types = new int[robot_joints.Count];
+                JointType[] joint_types = new JointType[robot_joints.Count];
                 double[] joint_lower_limits = new double[robot_joints.Count];
                 double[] joint_upper_limits = new double[robot_joints.Count];
                 double[] joint_vel_limits = new double[robot_joints.Count];
@@ -524,7 +524,7 @@ namespace GeneralRoboticsToolbox
                 {
                     h.SetColumn(o, robot_joints[o].Axis);
                     p.SetColumn(o, robot_joints[o].Origin.P);
-                    joint_types[o] = robot_joints[o].Joint_type;
+                    joint_types[o] = ConvertJointType(robot_joints[o].Joint_type);
                     joint_lower_limits[o] = robot_joints[o].Lower_limit;
                     joint_upper_limits[o] = robot_joints[o].Upper_limit;
                     joint_vel_limits[o] = robot_joints[o].Velocity_limit;
@@ -546,6 +546,23 @@ namespace GeneralRoboticsToolbox
 
 
                 
+        }
+
+        private JointType ConvertJointType(int t)
+        {
+            switch (t)
+            {
+                case 0:
+                    return JointType.Revolute;
+                case 1:
+                    return JointType.Prismatic;
+                case 2:
+                    return JointType.MobileOrientation;
+                case 3:
+                    return JointType.MobileTranslation;
+                default:
+                    throw new ArgumentException("Invalid joint type specified in URDF");
+            }
         }
 
     }

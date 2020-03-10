@@ -6,6 +6,7 @@ using GeneralRoboticsToolbox;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using MathNet.Numerics;
+using System.Linq;
 
 namespace GeneralRoboticsToolboxTests
 {
@@ -262,7 +263,7 @@ namespace GeneralRoboticsToolboxTests
 
             Matrix<double> H = Matrix<double>.Build.DenseOfColumnVectors(z, y, y, z, y, x);
             Matrix<double> P = 0.0254 * Matrix<double>.Build.DenseOfColumnVectors(13 * z, a, (-4.9 * y + 7.8 * x - 0.75 * z), -8.0 * z, a, a, 2.2 * x);
-            int[] joint_type = new[] { 0, 0, 0, 0, 0, 0 };
+            JointType[] joint_type = Enumerable.Repeat(JointType.Revolute, 6).ToArray();
             double[] joint_min = new[] { -5.0, -256, -214, -384, -32, -267 };
             double[] joint_max = new[] { 313.0, 76, 34, 194, 212, 267 };
             for (int i = 0; i < joint_min.Length; i++)
@@ -285,7 +286,7 @@ namespace GeneralRoboticsToolboxTests
 
             Matrix<double> H = Matrix<double>.Build.DenseOfColumnVectors(z, y, y, x, y, x);
             Matrix<double> P = Matrix<double>.Build.DenseOfColumnVectors(0.78 * z, 0.32*x,1.075*z, 0.2*z, 1.142*x, 0.2*x, a);
-            int[] joint_type = new[] { 0, 0, 0, 0, 0, 0 };
+            JointType[] joint_type = Enumerable.Repeat(JointType.Revolute, 6).ToArray();
             double[] joint_min = new[] { -170.0, -65, -180, -300, -120, -360 };
             double[] joint_max = new[] { 170.0, 85, 70, 300, 120, 360 };
             for (int i = 0; i < joint_min.Length; i++)
@@ -311,7 +312,7 @@ namespace GeneralRoboticsToolboxTests
 
             Transform pose = Fwdkin(puma, new[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 });
             Assert.IsTrue(pose.R.AlmostEqual(Matrix<double>.Build.DenseIdentity(3), 1e-8));
-            Assert.IsTrue(pose.P.AlmostEqual(Vector<double>.Build.DenseOfArray(new[] { 10.0, -4.9, 4.25 }), 1e-6));
+            Assert.IsTrue(pose.P.AlmostEqual(Vector<double>.Build.DenseOfArray(new[] { 10.0, -4.9, 4.25 })*.0254, 1e-6));
 
             // Another right-angle configuration
             double[] joints2 = new[] { 180.0, -90, -90, 90, 90, 90 };

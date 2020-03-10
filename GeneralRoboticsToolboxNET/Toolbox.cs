@@ -273,10 +273,10 @@ namespace GeneralRoboticsToolbox
             Matrix<double> R = Matrix<double>.Build.DenseIdentity(3);
             for(int i = 0; i < robot.Joint_type.Length; i++)
             {
-                if(robot.Joint_type[i]==0 || robot.Joint_type[i] == 2)
+                if(robot.Joint_type[i]== JointType.Revolute || robot.Joint_type[i] == JointType.MobileOrientation)
                 {
                     R = R * Rot(robot.H.Column(i), theta[i]);
-                }else if(robot.Joint_type[i] == 1 || robot.Joint_type[i] == 3)
+                }else if(robot.Joint_type[i] == JointType.Prismatic || robot.Joint_type[i] == JointType.MobileTranslation)
                 {
                     p = p + theta[i] * R * robot.H.Column(i);
                 }
@@ -323,11 +323,11 @@ namespace GeneralRoboticsToolbox
 
             for (int k = 0; k < robot.Joint_type.Length; k++)
             {
-                if (robot.Joint_type[k] == 0 || robot.Joint_type[k] == 2)
+                if (robot.Joint_type[k] == 0 || robot.Joint_type[k] == JointType.MobileOrientation)
                 {
                     R = R * Rot(robot.H.Column(k), theta[k]);
                 }
-                else if (robot.Joint_type[k] == 1 || robot.Joint_type[k] == 3)
+                else if (robot.Joint_type[k] == JointType.Prismatic || robot.Joint_type[k] == JointType.MobileTranslation)
                 {
                     p = p + theta[k] * R * robot.H.Column(k);
                 }
@@ -348,14 +348,14 @@ namespace GeneralRoboticsToolbox
             int j = 0;
             while (i < robot.Joint_type.Length)
             {
-                if (robot.Joint_type[i] == 0)
+                if (robot.Joint_type[i] == JointType.Revolute)
                 {
                     J.SetColumn(j, 0, 3, hi.Column(i));
                     J.SetColumn(j, 3, 3, Hat(hi.Column(i)) * (p0T - p0i.Column(i)));
-                }else if(robot.Joint_type[i] == 1)
+                }else if(robot.Joint_type[i] == JointType.Prismatic)
                 {
                     J.SetColumn(j, 3, 3, hi.Column(i));
-                }else if(robot.Joint_type[i] == 3)
+                }else if(robot.Joint_type[i] == JointType.MobileTranslation)
                 {
                     J.SetColumn(j, 3, 3, Rot(hi.Column(i + 2), theta[i + 2]) * hi.Column(i));
                     J.SetColumn(j + 1, 0, 3, hi.Column(i + 2));
@@ -528,15 +528,20 @@ namespace GeneralRoboticsToolbox
         }
 
     }
-
-
+    public enum JointType
+    {
+        Revolute,
+        Prismatic,
+        MobileOrientation,
+        MobileTranslation
+    }
 
     public class Robot
     {
         public Robot() { }
         public Matrix<double> H { get; set; }
         public Matrix<double> P { get; set; }
-        public Int32[] Joint_type { get; set; }
+        public JointType[] Joint_type { get; set; }
         public double[] Joint_lower_limit { get; set; }
         public double[] Joint_upper_limit { get; set; }
         public double[] Joint_vel_limit { get; set; }
@@ -548,21 +553,20 @@ namespace GeneralRoboticsToolbox
         public string Root_link_name { get; set; }
         public string Tip_link_name { get; set; }
 
-        public Robot(Matrix<double> h, Matrix<double> p, Int32[] joint_type, double[] joint_lower_limit = default(double[]), double[] joint_upper_limit = default(double[]), double[] joint_vel_limit = default(double[]), double[] joint_acc_limit = default(double[]), Matrix<double>[] m = default(Matrix<double>[]),
+        public Robot(Matrix<double> h, Matrix<double> p, JointType[] joint_type, double[] joint_lower_limit = default(double[]), double[] joint_upper_limit = default(double[]), double[] joint_vel_limit = default(double[]), double[] joint_acc_limit = default(double[]), Matrix<double>[] m = default(Matrix<double>[]),
                  Matrix<double> r_tool = default(Matrix<double>), Vector<double> p_tool = default(Vector<double>), string[] joint_names = default(string[]), string root_link_name = default(string), string tip_link_name = default(string))
         {
-            Int32[] joint_types = new Int32[] { 0, 1, 2, 3 };
             IEnumerable<Vector<double>> splicer = h.EnumerateColumns();
             
             foreach (Vector<double> column in splicer)
             {
                 if (!(column.L2Norm().AlmostEqual(1,8))) throw new ArgumentException(String.Format("Matrix H is not Acceptable"));
             }
-            for (int i = 0; i < joint_type.Length; i++)
+            /*for (int i = 0; i < joint_type.Length; i++)
             {
 
                 if (!(joint_types.Contains(joint_type[i]))) throw new ArgumentException(String.Format("Joint types contains incorrect values"));
-            }
+            }*/
             if (h.RowCount != 3) throw new ArgumentException(String.Format("Matrix H is not Acceptable"));
             if (p.RowCount != 3) throw new ArgumentException(String.Format("Matrix P is not Acceptable"));
             if (h.ColumnCount + 1 != p.ColumnCount || h.ColumnCount != joint_type.Length) throw new ArgumentException(String.Format("Matrix Dimensions are not Acceptable"));
