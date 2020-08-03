@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static GeneralRoboticsToolbox.Functions;
+using GeneralRoboticsToolboxNET;
 using GeneralRoboticsToolbox;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
@@ -285,7 +286,7 @@ namespace GeneralRoboticsToolboxTests
             Vector<double> a = Vector<double>.Build.DenseOfArray(new[] { 0.0, 0, 0 });
 
             Matrix<double> H = Matrix<double>.Build.DenseOfColumnVectors(z, y, y, x, y, x);
-            Matrix<double> P = Matrix<double>.Build.DenseOfColumnVectors(0.78 * z, 0.32*x,1.075*z, 0.2*z, 1.142*x, 0.2*x, a);
+            Matrix<double> P = Matrix<double>.Build.DenseOfColumnVectors(0.78 * z, 0.32 * x, 1.075 * z, 0.2 * z, 1.142 * x, 0.2 * x, a);
             JointType[] joint_type = Enumerable.Repeat(JointType.Revolute, 6).ToArray();
             double[] joint_min = new[] { -170.0, -65, -180, -300, -120, -360 };
             double[] joint_max = new[] { 170.0, 85, 70, 300, 120, 360 };
@@ -312,7 +313,7 @@ namespace GeneralRoboticsToolboxTests
 
             Transform pose = Fwdkin(puma, new[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 });
             Assert.IsTrue(pose.R.AlmostEqual(Matrix<double>.Build.DenseIdentity(3), 1e-8));
-            Assert.IsTrue(pose.P.AlmostEqual(Vector<double>.Build.DenseOfArray(new[] { 10.0, -4.9, 4.25 })*.0254, 1e-6));
+            Assert.IsTrue(pose.P.AlmostEqual(Vector<double>.Build.DenseOfArray(new[] { 10.0, -4.9, 4.25 }) * .0254, 1e-6));
 
             // Another right-angle configuration
             double[] joints2 = new[] { 180.0, -90, -90, 90, 90, 90 };
@@ -351,7 +352,7 @@ namespace GeneralRoboticsToolboxTests
             Console.WriteLine("Robot R tool={0}", pose4.R);
             Console.WriteLine("Robot R calculated tool={0}", pose4_R_t);
             Console.WriteLine("Robot p tool={0}", pose4.P);
-            
+
             Vector<double> pose4_P_t = Vector<double>.Build.DenseOfArray(new[] { 0.2450, 0.0916, 0.3872 });
             Console.WriteLine("Robot p calculated tool={0}", pose4_P_t);
             //Assert.IsTrue(pose4.R.AlmostEqual(pose4_R_t, 1 * 10 ^ 4));
@@ -396,6 +397,92 @@ namespace GeneralRoboticsToolboxTests
                 new[] { 0.2236, 0.0738, -0.0766, -0.0206, -0.0357, 0 },
                 new[] { 0, -0.1969, -0.2298, 0.0022, -0.0343, 0 });
             Assert.IsTrue(J3.AlmostEqual(J3_t, 1e-4));
+        }
+
+        [TestMethod]
+        public void Test_IterativeInverseKinSolver()
+        {
+            Robot robot1 = puma260b_robot();
+            Robot robot2 = abb_irb6640_180_255_robot();
+            Robot robot3 = puma260b_robot_tool();
+            Robot[] robots = new[] { robot1, robot3 };
+            double[] thetas = new double[6];
+            foreach (Robot robot in robots)
+            {
+                for (int i = 0; i < 100; i++)
+                {
+                    Console.WriteLine("test number {0}", i);
+                    for (int x = 0; x < 6; x++)
+                    {
+                        Random randnum = new Random();
+                        thetas[x] = randnum.NextDouble() * (robot.Joint_upper_limit[x] - robot.Joint_lower_limit[x]) + robot.Joint_lower_limit[x];
+                    }
+                    Assert.IsTrue(_test_configuration_iterative(robot, thetas));
+                }
+            }
+            Assert.IsTrue(_test_configuration_iterative(robot1, new[] { 0.0, 0, 0, 0, 0, 0 }));
+        }
+
+        public bool _test_configuration_iterative(Robot r, double[] theta)
+        {
+            Transform pose1 = Fwdkin(r, theta);
+            GeneralRoboticsToolboxNET.IterativeInverseKinSolver solver=new GeneralRoboticsToolboxNET.IterativeInverseKinSolver(r);
+           
+            Tuple<double[], bool> result = solver.Calculateinversekin(pose1, theta);
+            double[] theta2 = result.Item1;
+            
+            foreach (double limit in r.Joint_upper_limit)
+            {
+                Console.WriteLine("Upper limits: {0}", limit);
+            }
+            foreach (double limit in r.Joint_lower_limit)
+            {
+                Console.WriteLine("Lower limits: {0}", limit);
+            }
+            /*foreach (double[] thetaset in theta2)
+            {
+
+                foreach (double thetas in thetaset)
+                {
+                    Console.WriteLine("Theta values: {0}", thetas);
+                }
+
+            }*/
+            if (!result.Item2)
+            {
+                Console.WriteLine("length of theta2 no good");
+                return false;
+            }
+
+            
+
+            Transform pose2 = Fwdkin(r, theta2);
+            foreach(int row in Enumerable.Range(0, pose1.R.RowCount))
+            {
+                foreach(double val in pose1.R.Row(row))
+                {
+                    Console.Write(" {0} ", val);
+                }
+                Console.WriteLine();
+            }
+            foreach (int row in Enumerable.Range(0, pose2.R.RowCount))
+            {
+                foreach (double val in pose2.R.Row(row))
+                {
+                    Console.Write(" {0} ", val);
+                }
+                Console.WriteLine();
+            }
+
+            Console.WriteLine("pose 1={0}", pose1);
+            Console.WriteLine("pose 2={0}", pose2);
+            if (!(pose1 == pose2))
+            {
+                return false;
+            }
+            
+            return true;
+
         }
 
         [TestMethod]
